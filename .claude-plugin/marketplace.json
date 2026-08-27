@@ -1,0 +1,11 @@
+{
+  "name": "danielmateoslab",
+  "owner": { "name": "Daniel Mateos", "url": "https://github.com/DanielMateosLab" },
+  "plugins": [
+    {
+      "name": "pragmatic-code-review",
+      "source": "./",
+      "description": "Adversarial two-role code review that reports only to you and never posts anything."
+    }
+  ]
+}
