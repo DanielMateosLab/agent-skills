@@ -1,11 +1,20 @@
 {
-  "name": "pragmatic-code-review",
-  "description": "Adversarial two-role code review that reports only to you and never posts anything.",
-  "version": "1.1.0",
-  "author": { "name": "Daniel Mateos", "url": "https://github.com/DanielMateosLab" },
+  "name": "dani-ml-skills",
+  "description": "Agent skills: adversarial two-role code review that never posts anything, and a format guide for documenting user flows with screenshots.",
+  "version": "2.0.0",
+  "author": {
+    "name": "Daniel Mateos",
+    "url": "https://github.com/DanielMateosLab"
+  },
   "repository": "https://github.com/DanielMateosLab/agent-skills",
   "license": "MIT",
-  "keywords": ["code-review", "claude-code", "skill"],
+  "keywords": [
+    "code-review",
+    "screenshots",
+    "ui",
+    "claude-code",
+    "skill"
+  ],
   "agents": [
     "./skills/pragmatic-code-review/assets/agents/review-lens.md",
     "./skills/pragmatic-code-review/assets/agents/review-skeptic.md"

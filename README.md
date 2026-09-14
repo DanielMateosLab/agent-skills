@@ -3,6 +3,27 @@
 Agent skills I use day to day, installable into any repo: **pragmatic-code-review** and
 **ui-flow-screenshots**.
 
+## Install
+
+With the [skills CLI](https://github.com/vercel-labs/skills):
+
+```bash
+npx skills add DanielMateosLab/agent-skills
+```
+
+Add `-g` for global instead of the current project, and `-a claude-code` (or any other supported
+agent) to skip the picker.
+
+As a Claude Code plugin — this also installs the two review subagents, which the skills CLI does
+not:
+
+```
+/plugin marketplace add DanielMateosLab/agent-skills
+/plugin install dani-ml-skills@danielmateoslab
+```
+
+Either way you get both skills.
+
 ## pragmatic-code-review
 
 A two-role code review loop. A **reviewer** proposes findings; an adversarial **skeptic** gets each
@@ -19,26 +40,7 @@ context.
 status check, no Slack or Jira or Notion update. It writes a markdown report and prints a short
 summary in chat. You decide what happens next.
 
-### Install
-
-With the [skills CLI](https://github.com/vercel-labs/skills):
-
-```bash
-npx skills add DanielMateosLab/agent-skills
-```
-
-Add `-g` for global instead of the current project, and `-a claude-code` (or any other supported
-agent) to skip the picker.
-
-As a Claude Code plugin — this also installs the two subagents below, which the skills CLI does
-not:
-
-```
-/plugin marketplace add DanielMateosLab/agent-skills
-/plugin install pragmatic-code-review@danielmateoslab
-```
-
-Then just ask: "review this branch", "review PR 412", "review my changes before I commit".
+Ask: "review this branch", "review PR 412", "review my changes before I commit".
 
 ### The two subagents
 

@@ -1,11 +1,14 @@
 {
   "name": "danielmateoslab",
-  "owner": { "name": "Daniel Mateos", "url": "https://github.com/DanielMateosLab" },
+  "owner": {
+    "name": "Daniel Mateos",
+    "url": "https://github.com/DanielMateosLab"
+  },
   "plugins": [
     {
-      "name": "pragmatic-code-review",
+      "name": "dani-ml-skills",
       "source": "./",
-      "description": "Adversarial two-role code review that reports only to you and never posts anything."
+      "description": "Agent skills: adversarial two-role code review that never posts anything, and a format guide for documenting user flows with screenshots."
     }
   ]
 }
