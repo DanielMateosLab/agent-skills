@@ -1,7 +1,7 @@
 # agent-skills
 
-Agent skills I use day to day, installable into any repo. Currently one:
-**pragmatic-code-review**.
+Agent skills I use day to day, installable into any repo: **pragmatic-code-review** and
+**ui-flow-screenshots**.
 
 ## pragmatic-code-review
 
@@ -81,9 +81,30 @@ The remote is assumed to be `origin`. `pr` mode fetches `pull/N/head`, which is 
 so on GitLab it degrades to reviewing the diff alone without reading source files — use `branch`
 mode there instead.
 
+## ui-flow-screenshots
+
+The format guide for documenting a user flow with screenshots, so a set is readable by someone who
+wasn't there. One directory per flow, `desktop/` and `mobile/` inside every one, files named
+`NN_step_name.png` numbered by the order a person performs the steps — not the order you happened
+to shoot them, because you always double back and timestamps lie.
+
+It also covers how to split a feature into flows by role without re-shooting the same happy path
+twice, optional red highlighting injected into the live DOM (never post-processed onto the PNG),
+and the handful of gotchas that each cost an hour the first time: `outline` not painting on a
+`<tr>`, ancestors with `overflow` clipping it, toasts that dismiss before the capture lands, and
+leftover app state between passes masquerading as a broken app.
+
+Tool-agnostic — Playwright, Puppeteer, or an MCP wrapper around either.
+
+Ask: "screenshot this flow", "document the checkout flow for the PR", "capture these screens on
+desktop and mobile".
+
 ## Layout
 
 ```
+skills/ui-flow-screenshots/
+  SKILL.md                      # the whole thing: layout, naming, viewports, highlighting
+
 skills/pragmatic-code-review/
   SKILL.md                      # the orchestrator: target resolution, lenses, rounds, gate
   references/
