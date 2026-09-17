@@ -1,7 +1,7 @@
 # agent-skills
 
-Agent skills I use day to day, installable into any repo: **pragmatic-code-review** and
-**ui-flow-screenshots**.
+Agent skills I use day to day, installable into any repo: **pragmatic-code-review**,
+**ui-flow-screenshots** and **ui-flow-videos**.
 
 ## Install
 
@@ -22,7 +22,7 @@ not:
 /plugin install dani-ml-skills@danielmateoslab
 ```
 
-Either way you get both skills.
+Either way you get all three skills.
 
 ## pragmatic-code-review
 
@@ -101,11 +101,39 @@ Tool-agnostic — Playwright, Puppeteer, or an MCP wrapper around either.
 Ask: "screenshot this flow", "document the checkout flow for the PR", "capture these screens on
 desktop and mobile".
 
+## ui-flow-videos
+
+The same job as `ui-flow-screenshots`, for when the audience will watch rather than follow: a
+recording with a visible pointer that travels with easing, a pause before every click, typing at
+an irregular rhythm, chapter cards and captions. Playwright records the page but never the
+cursor, so a raw `recordVideo` of a test is unwatchable — the pointer here is drawn into the page
+and moved in step with the real mouse.
+
+It needs the recorder, which lives in its own repo:
+
+```bash
+git clone https://github.com/DanielMateosLab/flow-recorder ~/coding/flow-recorder
+cd ~/coding/flow-recorder && npm install
+npm run record -- flows/my-flow.ts
+```
+
+Flows are throwaway TypeScript files under `flows/`, gitignored. The skill covers the `record()`
+hooks, how to script a flow so it reads as a person using the app, and the constraints that only
+show up once a video gets long: the recording is wall clock and cannot be paused, Playwright
+records per page, fixture names end up legible on camera, and a project helper that imports
+`@playwright/test` at module scope kills the run outright.
+
+Ask: "record a video of this flow", "make me a demo of the checkout", "screen recording for the
+PR".
+
 ## Layout
 
 ```
 skills/ui-flow-screenshots/
   SKILL.md                      # the whole thing: layout, naming, viewports, highlighting
+
+skills/ui-flow-videos/
+  SKILL.md                      # setup, the record() hooks, pacing, long-video constraints
 
 skills/pragmatic-code-review/
   SKILL.md                      # the orchestrator: target resolution, lenses, rounds, gate
