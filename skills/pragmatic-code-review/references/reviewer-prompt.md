@@ -8,8 +8,9 @@ subagent reads it from disk — copying it in would cost roughly 1,800 tokens pe
 drift from the source the moment either is edited.
 
 Substitute: `{LENS_NAME}`, `{LENS_BRIEF}`, `{PACK}`, `{REPO}`, `{SKILL_DIR}`, `{READ_LINE}`
-(the read-source-files line from `meta.md`), and `{BIG_DIFF_CLAUSE}` (only when
-`stats.txt` says `too_large_to_read_whole: yes`).
+(the read-source-files line from `meta.md`), `{BIG_DIFF_CLAUSE}` (only when
+`stats.txt` says `too_large_to_read_whole: yes`), and `{SINCE_CLAUSE}` (only in `since` mode,
+with `{SINCE}` the sha from `meta.md`).
 
 ---
 
@@ -36,6 +37,16 @@ Substitute: `{LENS_NAME}`, `{LENS_BRIEF}`, `{PACK}`, `{REPO}`, `{SKILL_DIR}`, `{
 > - Project rules in force at the base ref: `{PACK}/rules.md`
 > - Repository root: `{REPO}`
 > - **{READ_LINE}**
+>
+> {SINCE_CLAUSE: This is a re-review. `{PACK}/diff.patch` holds only what changed after
+> `{SINCE}`, the head an earlier review already covered; `{PACK}/branch.patch` is the whole
+> branch, for context only. Anchor every finding on a line `diff.patch` adds or changes, with
+> two exceptions. First, each entry under **Sent for fixing** in `{PACK}/adjudicated.md`: check
+> that it is actually resolved, and if it is not, report it again at its own lines and say why
+> the fix falls short. Second, a P0 or P1 in earlier branch code that you trip over while reading
+> around the new lines: report it, but do not go looking for them, because re-reviewing the
+> whole branch is what this round exists to avoid. Never re-raise an entry under **Already
+> decided** unless `diff.patch` changed the lines it points at.}
 >
 > {BIG_DIFF_CLAUSE: This diff is too large to read in one go — a single Read will truncate it
 > silently and you will end up reviewing a fraction of the change while believing you saw all of
@@ -70,6 +81,11 @@ Substitute: `{LENS_NAME}`, `{LENS_BRIEF}`, `{PACK}`, `{REPO}`, `{SKILL_DIR}`, `{
 > where it lives. Never assert "this project's convention is X" without grepping and citing the
 > count.
 >
+> **Find the class, not just the line.** When a finding is an instance of a mistake that can
+> repeat (state rebuilt from a server response that drops local edits, a query missing the tenant
+> scope, the same wrong copy on several dialogs), grep the change for its other instances and list
+> them in `pattern`. One finding with four locations beats four rounds that each find one.
+>
 > **No minimum.** If this lens finds nothing, return an empty array. That is a real result and
 > it is useful. Fabricating a finding to look thorough is the worst outcome available to you —
 > worse than missing something.
@@ -93,7 +109,8 @@ Substitute: `{LENS_NAME}`, `{LENS_BRIEF}`, `{PACK}`, `{REPO}`, `{SKILL_DIR}`, `{
 >     "failure_scenario": "Concrete input or state, then the observed wrong behaviour: 'POST /orders with an unknown coupon returns 500 because order is null at line 214.'",
 >     "evidence": "What you checked and what you found — call sites, tests, blame, greps, with file:line.",
 >     "severity": "P0|P1|P2|P3",
->     "fix": "One or two sentences: the smallest change that resolves it."
+>     "fix": "One or two sentences: the smallest change that resolves it.",
+>     "pattern": "The mistake in general terms, then every other place in the change it occurs, as file:line — or 'no other instance' after you grepped."
 >   }
 > ]
 > ```

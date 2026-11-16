@@ -5,6 +5,7 @@
 #   bash collect.sh branch [base-ref]     # feature branch vs its merge base
 #   bash collect.sh pr <number|url>       # a pull request, via gh
 #   bash collect.sh worktree              # uncommitted work: staged + unstaged + untracked
+#   bash collect.sh since <sha> [base-ref] # what the branch changed after <sha>, the head an earlier round reviewed
 #
 # Writes only inside .claude/reviews/ and appends one line to .git/info/exclude.
 # Never modifies tracked files, the index, HEAD, or any branch ref.
@@ -20,6 +21,7 @@ die() { echo "collect.sh: $*" >&2; [ -n "${PACK:-}" ] && [ ! -s "${PACK:-}/diff.
 
 MODE="${1:-branch}"
 ARG="${2:-}"
+ARG2="${3:-}"
 
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || die "not a git repository"
 cd "$ROOT" || die "cannot cd to $ROOT"
@@ -49,6 +51,19 @@ case "$MODE" in
     PRNUM="$(echo "$ARG" | grep -oE '[0-9]+' | tail -1)"
     [ -n "$PRNUM" ] || die "could not parse a PR number from '$ARG'"
     SLUG="pr-$PRNUM"
+    ;;
+  since)
+    [ -n "$ARG" ] || die "since mode needs the sha an earlier round reviewed"
+    SINCE="$(git rev-parse --verify --quiet "$ARG^{commit}")" \
+      || die "'$ARG' is not a commit in this clone. Fetch it, or review the whole branch instead."
+    BASE="${ARG2:-$(default_base)}" \
+      || die "cannot determine the default branch. Pass one explicitly, e.g. 'collect.sh since $ARG origin/staging'."
+    git rev-parse --verify --quiet "$BASE^{commit}" >/dev/null \
+      || die "base ref '$BASE' does not exist. Pass an explicit one."
+    git merge-base --is-ancestor "$SINCE" HEAD \
+      || die "'$ARG' is not an ancestor of HEAD: the branch history was rewritten. Review the whole branch instead."
+    [ "$SINCE" = "$(git rev-parse HEAD)" ] && die "nothing to review: HEAD is still '$ARG'"
+    SLUG="$(git rev-parse --abbrev-ref HEAD | tr -cs 'a-zA-Z0-9' '-' | sed 's/^-//;s/-$//')"
     ;;
   worktree)
     SLUG="worktree-$(git rev-parse --abbrev-ref HEAD | tr -cs 'a-zA-Z0-9' '-' | sed 's/^-//;s/-$//')"
@@ -172,6 +187,38 @@ EOF
       echo
       echo "## Commits on this branch"; git log --oneline "$MB"..HEAD
     } >> "$PACK/meta.md"
+    ;;
+
+  since)
+    MB="$(git merge-base "$BASE" HEAD 2>/dev/null)" \
+      || die "no merge base between '$BASE' and HEAD (unrelated histories?). Pass an explicit base."
+    FROM="$SINCE"; REPLAYED=0
+    if [ "$(git merge-base "$BASE" "$SINCE")" != "$MB" ]; then
+      FROM="$(git merge-tree --write-tree "$SINCE" "$MB" 2>/dev/null | head -1)"
+      git rev-parse --verify --quiet "$FROM^{tree}" >/dev/null \
+        || die "could not replay the merge of $(git rev-parse --short "$MB") onto '$ARG' (git >= 2.38 needed). Review the whole branch instead."
+      REPLAYED=1
+    fi
+    git diff "$FROM" HEAD > "$PACK/diff.patch"
+    git diff "$FROM" HEAD --name-only > "$PACK/files.txt"
+    [ -s "$PACK/diff.patch" ] \
+      || die "nothing to review: the branch changed nothing after '$ARG' beyond what $BASE brought in"
+    git diff "$MB" HEAD > "$PACK/branch.patch"
+    BASE="$MB"
+    {
+      echo "- base: $MB"
+      echo "- since: $SINCE (an earlier round reviewed everything up to here)"
+      echo "- head: $(git rev-parse --abbrev-ref HEAD) ($(git rev-parse --short HEAD))"
+      echo "- diff.patch holds only what changed after since; branch.patch is the whole branch, for context"
+      [ "$REPLAYED" = 1 ] && echo "- the base was merged in after since: diff.patch is measured against an automatic replay of that merge, so it shows conflicts resolved by hand plus later commits; conflict markers on removed lines belong to the replay"
+      echo
+      echo "## Commits since $(git rev-parse --short "$SINCE")"; git log --oneline "$SINCE"..HEAD
+      echo
+      echo "## Commits on this branch"; git log --oneline "$MB"..HEAD
+    } >> "$PACK/meta.md"
+    awk '/^\+\+\+ /{ f=$0; sub(/^\+\+\+ (b\/)?/, "", f); next }
+      /^@@ / && f != "/dev/null" { split($3, a, ","); s=substr(a[1], 2); n=(a[2]=="" ? 1 : a[2]);
+        print f ":" s "-" (n > 0 ? s + n - 1 : s) }' "$PACK/diff.patch" > "$PACK/changed-lines.txt"
     ;;
 esac
 

@@ -94,6 +94,7 @@ Work out what is under review from what the user said. Do not ask if it is infer
 | "review PR 412", a PR URL | `pr 412` |
 | "review this branch", a ticket key, or nothing specific | `branch` (optionally with an explicit base) |
 | "review my changes", "before I commit", "what I just did" | `worktree` |
+| "re-review after the fixes", "round 2", or a caller hands you the head sha an earlier review covered | `since <sha>` (see "Re-review after fixes") |
 
 Then run the collector. It resolves refs, fetches the PR head, builds the diff, reads the
 project's rules at the base ref, and computes the tier — deterministically, so none of that is
@@ -137,7 +138,39 @@ Two things to add yourself before dispatching:
 
 **Skip gates.** If `meta.md` shows the PR is a draft or already merged, or the change is
 docs/lockfile-only, or `stats.txt` shows a handful of trivial lines, say so in one line and
-stop. Do not spin up agents to review a version bump.
+stop. Do not spin up agents to review a version bump. In `since` mode only the docs/lockfile gate
+applies: a three-line fix still gets the trivial tier, because fixes are where re-review finds
+its bugs.
+
+## Re-review after fixes (`since` mode)
+
+A re-review after fixes covers only what changed since the head the previous review saw:
+`collect.sh since <sha> [base]`. Re-reviewing the whole branch after every fix is how review
+loops never end: each pass surfaces more old code, while the fixes are what nobody has looked at
+yet.
+
+What changes in the pack: `diff.patch` and `files.txt` hold only what changed after
+`<sha>`; if the base was merged into the branch since, the collector diffs against a replay of
+that merge, so hand-resolved conflicts show up and the base's own changes stay out. `branch.patch`
+is the whole branch, for the lenses' context only. `changed-lines.txt` lists the new-side line
+range of every hunk in `diff.patch`. `meta.md`'s `base` is still the branch's merge base with
+the base branch, and that is the base ref the skeptics get, so a finding in earlier branch code
+is judged as part of the branch, not as pre-existing. The tier comes from the new diff, so most
+re-reviews are trivial.
+
+If the collector says there is nothing to review, the round is clean: say so and stop.
+
+Before dispatching, write `{PACK}/adjudicated.md` from the earlier reviews' reports (the caller
+names them; otherwise look for this branch's earlier reports in `.claude/reviews/`). Reading
+them is fine: they are short and they are your output, not the diff. Two lists, one line per
+entry, `file:line · claim`:
+
+- **Sent for fixing** — the previous review's reported findings. The lenses check that each is
+  actually resolved.
+- **Already decided** — every Dropped, Optional, Contested and Unverified row of every earlier
+  review, with its outcome. Nobody re-raises these.
+
+Every lens prompt gets `{SINCE_CLAUSE}` (see `references/reviewer-prompt.md`).
 
 ## Step 1 — Pick the lenses
 
@@ -193,6 +226,11 @@ previous item, so clusters don't drift), keep the higher severity, record `also_
 
 Do not read the code here. Do not drop anything on your own opinion. Pre-judging at this stage
 turns you into an extra reviewer with a silent veto, and you have not read the diff.
+
+The one mechanical drop, in `since` mode: a finding that matches an **Already decided** entry
+(same file, same claim) on lines outside `changed-lines.txt` goes straight to the Dropped table
+as `ALREADY_DECIDED`, citing the review that decided it, without a skeptic. Spending a skeptic
+to re-decide the same thing on every re-review is how the agent budget leaks.
 
 ## Step 4 — Round 1: the skeptic
 
@@ -285,6 +323,15 @@ lower the confidence gate. An unverified finding is noise at any severity.
 The one exception: an **unverified P0 or P1** is not gated away by its capped confidence. It goes
 in the Unverified section *and* is named in the verdict line, because "we could not tell whether
 this crashes production" is exactly what the user needs to know before merging.
+
+In `since` mode, sort each survivor by where it sits before gating:
+
+- **unresolved** — it matches a **Sent for fixing** entry: the fix did not hold. Gated as usual.
+- **new** — its line falls inside a `changed-lines.txt` range for its file. Gated as usual.
+- **earlier** — anything else: branch code an earlier review already saw. It goes in the
+  report's "Earlier in the branch" section, whatever its severity, and it reaches the verdict
+  line only at P0. Whether it blocks is the caller's call; a re-review exists to check the
+  fixes, not to review the branch again.
 
 Then write the report with `references/report-template.md`. It covers the file path, the required
 sections, the dropped-findings table, the coverage note, the verdict, and the chat summary.

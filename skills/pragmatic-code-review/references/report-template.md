@@ -17,6 +17,7 @@ Coverage is the report: one line per lens saying what it actually looked at.
 # Review — <target> · <YYYY-MM-DD>
 
 <base ref> → <head ref> · <N> files, +<A>/−<B> · tier: <trivial|standard|large>
+<since mode only: re-review of what changed after <since sha>>
 Lenses: <list> · Rules loaded: <CLAUDE.md@base, packages/api/CLAUDE.md, convention skills, …>
 <M> raw findings → <K> after dedup → <J> verified → <R> reported
 
@@ -39,6 +40,7 @@ const d = order.discount;
 **Impact** <what the user or the system actually experiences>
 **Verified** <what the skeptic went looking for and what it found — one line, with a file:line>
 **Fix** <the smallest change that resolves it>
+**Same mistake at** <the other file:line instances from `pattern`, or "no other instance">
 
 ---
 
@@ -49,6 +51,17 @@ const d = order.discount;
 ## Optional (P2)
 
 <one line each — file:line, the issue, the fix. No expanded blocks.>
+
+## Previous review
+
+<since mode only. One line per Sent for fixing entry: resolved, with the file:line that shows it,
+or unresolved, pointing at the finding above that carries it.>
+
+## Earlier in the branch
+
+<since mode only. Findings on branch code an earlier review already saw, one line each: severity,
+file:line, the issue, the fix. Not in the verdict unless P0; the caller decides whether they
+block.>
 
 ## Contested
 
@@ -72,6 +85,7 @@ refutation.>
 | `src/c.ts:88` concurrent writes could interleave | UNFALSIFIABLE | no input produces an observable failure |
 | `src/d.ts:12` extract this into a hook | — | single consumer; second-caller test |
 | `src/e.ts:55` naming inconsistent with neighbours | P3 | below the severity gate |
+| `src/f.ts:40` unguarded restore on a stale click | ALREADY_DECIDED | first review: ESTABLISHED_CONVENTION |
 
 ## Coverage
 
